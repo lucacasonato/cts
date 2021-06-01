@@ -662,8 +662,13 @@ got [${failedByteActualValues.join(', ')}]`;
     }
 
     this.device.pushErrorScope(filter);
-    const returnValue = fn();
-    const promise = this.device.popErrorScope();
+    let returnValue;
+    let promise: Promise<GPUError | null>;
+    try {
+      returnValue = fn();
+    } finally {
+      promise = this.device.popErrorScope();
+    }
 
     this.eventualAsyncExpectation(async niceStack => {
       const error = await promise;

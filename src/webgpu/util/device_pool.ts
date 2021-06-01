@@ -286,14 +286,20 @@ class DeviceHolder implements DeviceProvider {
     );
 
     if (gpuValidationError !== null) {
-      assert(gpuValidationError instanceof GPUValidationError);
+      assert(
+        gpuValidationError instanceof GPUValidationError,
+        `not a GPUValidationError: ${gpuValidationError.toString()}`
+      );
       // Allow the device to be reused.
       throw new TestFailedButDeviceReusable(
         `Unexpected validation error occurred: ${gpuValidationError.message}`
       );
     }
     if (gpuOutOfMemoryError !== null) {
-      assert(gpuOutOfMemoryError instanceof GPUOutOfMemoryError);
+      assert(
+        gpuOutOfMemoryError instanceof GPUOutOfMemoryError,
+        `not a GPUOutOfMemoryError: ${gpuOutOfMemoryError.toString()}`
+      );
       // Don't allow the device to be reused; unexpected OOM could break the device.
       throw new TestOOMedShouldAttemptGC('Unexpected out-of-memory error occurred');
     }

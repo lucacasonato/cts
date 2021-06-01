@@ -11,7 +11,7 @@ import { Logger } from "../out/common/framework/logging/logger.js";
 import { parseQuery } from "../out/common/framework/query/parseQuery.js";
 import { compareQueries, Ordering } from '../out/common/framework/query/compare.js';
 import { assert, unreachable } from "../out/common/framework/util/util.js";
-import { parseExpectationsForTestQuery } from "../src/common/framework/query/query.js";
+import { parseExpectationsForTestQuery } from "../out/common/framework/query/query.js";
 
 function usage(rc) {
   console.log("Usage:");
@@ -98,7 +98,8 @@ if (queries.length === 0) {
 let ignores = [];
 if (ignoreFile) {
   const ignoreFileText = await Deno.readTextFile(ignoreFile);
-  ignores = ignoreFileText.split("\n").map((line) => line.split("#")[0].trim())
+  ignores = ignoreFileText.split("\n")
+    .map((line) => line.split("#")[0].trim())
     .filter((l) => l.length > 0);
 }
 
@@ -127,7 +128,14 @@ try {
   for (const testcase of testcases) {
     total++;
     const name = testcase.query.toString();
-    if (ignores.includes(name)) {
+    const isIgnored = ignores.find((l) => {
+      if (l.startsWith("^")) {
+        return name.startsWith(l.slice(1));
+      } else {
+        return name == l;
+      }
+    })
+    if (isIgnored) {
       ignored.push(name);
       continue;
     }
@@ -186,7 +194,7 @@ try {
     printResults(failed);
   }
 
-  const passed = total - warned.length - failed.length - skipped.length;
+  const passed = total - warned.length - failed.length - skipped.length - ignored.length;
   const pct = (x) => ((100 * x) / total).toFixed(2);
   const rpt = (x) => {
     const xs = x.toString().padStart(1 + Math.log10(total), " ");
@@ -199,6 +207,12 @@ Passed with warnings = ${rpt(warned.length)}
 Skipped              = ${rpt(skipped.length)}
 Failed               = ${rpt(failed.length)}
 Ignored              = ${rpt(ignored.length)}`);
+
+  if (verbose) {
+    for (const [name] of failed) {
+      console.log(name);
+    }
+  }
 
   if (failed.length || warned.length) {
     Deno.exit(1);
